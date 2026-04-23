@@ -1,0 +1,6 @@
+{
+  "name": "Collaborative Notes Board",
+  "description": "A real-time collaborative workspace where multiple users can post, drag, and edit sticky notes together.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}

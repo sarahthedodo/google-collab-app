@@ -1,0 +1,50 @@
+{
+  "entities": {
+    "Note": {
+      "title": "Sticky Note",
+      "description": "A collaborative sticky note content",
+      "type": "object",
+      "properties": {
+        "content": {
+          "type": "string",
+          "description": "The text content of the note"
+        },
+        "color": {
+          "type": "string",
+          "description": "The background color of the note"
+        },
+        "x": {
+          "type": "number",
+          "description": "Horizontal position on the board"
+        },
+        "y": {
+          "type": "number",
+          "description": "Vertical position on the board"
+        },
+        "authorId": {
+          "type": "string",
+          "description": "UID of the user who created the note"
+        },
+        "authorName": {
+          "type": "string",
+          "description": "Name of the user who created the note"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["content", "color", "x", "y", "authorId", "authorName", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "notes/{noteId}": {
+      "schema": "Note",
+      "description": "Collection of collaborative sticky notes"
+    }
+  }
+}

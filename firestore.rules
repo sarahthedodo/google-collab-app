@@ -1,0 +1,81 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return request.auth.token.email_verified == true;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Note Validation
+    function isValidNote(data) {
+      return data.keys().hasAll(['content', 'color', 'x', 'y', 'authorId', 'authorName', 'createdAt', 'updatedAt'])
+        && data.keys().size() == 8
+        && data.content is string && data.content.size() <= 1000
+        && data.color is string && data.color.size() <= 20
+        && data.x is number && data.y is number
+        && data.authorId == request.auth.uid
+        && data.authorName is string && data.authorName.size() <= 100
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    match /notes/{noteId} {
+      // Anyone can see the board
+      allow get: if true;
+      allow list: if true;
+
+      allow create: if (
+        isSignedIn() 
+        && isEmailVerified()
+        && isValidId(noteId)
+        && isValidNote(incoming())
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time
+      );
+
+      allow update: if (
+        isSignedIn()
+        && isEmailVerified()
+        && isValidId(noteId)
+        && existing().authorId == request.auth.uid // Only owner can update
+        && isValidNote(incoming())
+        && incoming().createdAt == existing().createdAt // Immutable
+        && incoming().authorId == existing().authorId // Immutable
+        && incoming().updatedAt == request.time
+        && (
+          // Action: Edit Content or Color
+          incoming().diff(existing()).affectedKeys().hasOnly(['content', 'color', 'updatedAt']) ||
+          // Action: Drag/Move
+          incoming().diff(existing()).affectedKeys().hasOnly(['x', 'y', 'updatedAt'])
+        )
+      );
+
+      allow delete: if (
+        isSignedIn()
+        && isEmailVerified()
+        && existing().authorId == request.auth.uid // Only owner can delete
+      );
+    }
+  }
+}
